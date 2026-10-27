@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>منظّم الدفعة</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f3ff;--card:#fff;--tx:#2b2540;--mut:#7a7394;--line:#e8e2fb;--pri:#7c5cff;--pri2:#ff7eb6;--ok:#22b07d;--warn:#f59e0b;--bad:#ef4444;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17142a;--card:#221e3b;--tx:#eeeaff;--mut:#a39cc4;--line:#342f55;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17142a;--card:#221e3b;--tx:#eeeaff;--mut:#a39cc4;--line:#342f55;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Segoe UI",Tahoma,"Noto Sans Arabic",system-ui,sans-serif;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+header{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border-radius:22px;padding:20px;box-shadow:0 8px 24px rgba(124,92,255,.25)}
+header h1{margin:0;font-size:1.5rem}
+header p{margin:4px 0 14px;opacity:.9;font-size:.95rem}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:rgba(255,255,255,.2);border-radius:14px;padding:8px 4px;text-align:center;font-size:.8rem}
+.stat b{display:block;font-size:1.3rem}
+.bar{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px}
+.tab{flex:1;min-width:max-content;border:0;background:var(--card);color:var(--mut);padding:10px 14px;border-radius:14px;font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line)}
+.tab.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+button{font:inherit;cursor:pointer}
+.btn{border:0;border-radius:12px;padding:9px 14px;background:var(--pri);color:#fff;font-weight:600}
+.btn.ghost{background:var(--card);color:var(--tx);border:1px solid var(--line)}
+.add{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:8px;margin-bottom:14px}
+.add .row{display:flex;gap:8px;flex-wrap:wrap}
+input,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:9px 12px;width:100%}
+input:focus,textarea:focus{outline:2px solid var(--pri);outline-offset:1px}
+.row input[type=date]{flex:1;min-width:140px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start}
+.item.done .t{text-decoration:line-through;color:var(--mut)}
+.body{flex:1;min-width:0}
+.t{font-weight:700;overflow-wrap:anywhere}
+.n{color:var(--mut);font-size:.9rem;overflow-wrap:anywhere}
+.meta{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.badge{border:0;border-radius:99px;padding:3px 12px;font-size:.8rem;font-weight:700;color:#fff;background:var(--warn)}
+.badge.s0{background:var(--mut)}.badge.s1{background:var(--warn)}.badge.s2{background:var(--ok)}
+.date{font-size:.8rem;color:var(--mut)}.date.late{color:var(--bad);font-weight:700}
+.x{border:0;background:none;color:var(--mut);font-size:1.1rem;padding:2px 6px}
+.empty{text-align:center;color:var(--mut);padding:28px 10px;border:2px dashed var(--line);border-radius:18px}
+.modal{position:fixed;inset:0;background:rgba(20,15,40,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.on{display:flex}
+.box{background:var(--card);border-radius:20px;padding:18px;width:100%;max-width:520px;display:grid;gap:10px}
+.box textarea{height:220px;direction:rtl}
+.msg{color:var(--ok);font-size:.85rem;min-height:1.2em}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>📚 منظّم الدفعة</h1>
+<p>كل المذاكرة والبروجكتات والتاسكات والكويزات في مكان واحد</p>
+<div class="stats">
+<div class="stat"><b id="s0">0</b>كله</div>
+<div class="stat"><b id="s1">0</b>لسه</div>
+<div class="stat"><b id="s2">0</b>خلص</div>
+<div class="stat"><b id="s3">0</b>متأخر</div>
+</div>
+</header>
+<div class="bar">
+<button class="btn" id="share">📤 ابعتها لزمايلك</button>
+<button class="btn ghost" id="backup">💾 نسخة احتياطي / استيراد</button>
+</div>
+<div class="tabs" id="tabs"></div>
+<div class="add" id="add"></div>
+<div id="list"></div>
+</div>
+
+<div class="modal" id="modal"><div class="box">
+<b id="mt"></b>
+<textarea id="ta"></textarea>
+<div class="msg" id="msg"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn" id="copy">نسخ</button>
+<button class="btn ghost" id="imp" style="display:none">استيراد</button>
+<button class="btn ghost" id="close">قفل</button>
+</div></div></div>
+
+<script>
+var TABS=[
+{k:'tasks',n:'✅ التاسكات',ph:'التاسك إيه؟',nl:'ملاحظات (اختياري)',st:['لسه','شغال','خلص']},
+{k:'study',n:'📖 المذاكرة',ph:'المادة أو الموضوع',nl:'هذاكر إيه بالظبط؟',st:['لسه','بذاكر','خلصت']},
+{k:'projects',n:'🚀 البروجكتات',ph:'اسم البروجكت',nl:'تفاصيل أو لينك',st:['فكرة','شغال','اتسلّم']},
+{k:'quizzes',n:'📝 الكويزات',ph:'الكويز في إيه؟',nl:'هييجي منه إيه؟',st:['جاي','اتحل','الدرجة طلعت']}
+];
+var KEY='study-hub-v1',cur=0,data={tasks:[],study:[],projects:[],quizzes:[]};
+function load(){try{var r=localStorage.getItem(KEY);if(r){var d=JSON.parse(r);for(var k in data)if(Array.isArray(d[k]))data[k]=d[k];}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+function $(i){return document.getElementById(i)}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function late(it){return it.d&&it.s<2&&it.d<today()}
+function fmt(d){try{return new Date(d+'T00:00').toLocaleDateString('ar-EG',{day:'numeric',month:'long'})}catch(e){return d}}
+
+function renderTabs(){var b=$('tabs');b.textContent='';TABS.forEach(function(t,i){var x=el('button','tab'+(i===cur?' on':''),t.n+' ('+data[t.k].length+')');x.onclick=function(){cur=i;render()};b.appendChild(x)})}
+
+function renderAdd(){
+var t=TABS[cur],a=$('add');a.textContent='';
+var ti=el('input');ti.placeholder=t.ph;
+var no=el('input');no.placeholder=t.nl;
+var row=el('div','row'),dt=el('input');dt.type='date';
+var bt=el('button','btn','＋ ضيف');
+function go(){var v=ti.value.trim();if(!v){ti.focus();return}
+data[t.k].unshift({t:v,n:no.value.trim(),d:dt.value,s:0,id:Date.now()});save();render()}
+bt.onclick=go;ti.onkeydown=function(e){if(e.key==='Enter')go()};
+row.appendChild(dt);row.appendChild(bt);
+a.appendChild(ti);a.appendChild(no);a.appendChild(row);
+}
+
+function renderList(){
+var t=TABS[cur],L=$('list');L.textContent='';var arr=data[t.k];
+if(!arr.length){L.appendChild(el('div','empty','لسه مفيش حاجة هنا. ضيفي أول واحدة فوق ✨'));return}
+arr.forEach(function(it,i){
+var c=el('div','item'+(it.s===2?' done':''));
+var b=el('div','body');b.appendChild(el('div','t',it.t));
+if(it.n)b.appendChild(el('div','n',it.n));
+var m=el('div','meta');
+var bd=el('button','badge s'+it.s,t.st[it.s]);bd.title='اضغطي عشان تغيّري الحالة';
+bd.onclick=function(){it.s=(it.s+1)%3;save();render()};
+m.appendChild(bd);
+if(it.d)m.appendChild(el('span','date'+(late(it)?' late':''),(late(it)?'⚠️ متأخر · ':'📅 ')+fmt(it.d)));
+b.appendChild(m);c.appendChild(b);
+var x=el('button','x','✕');x.title='مسح';
+x.onclick=function(){if(confirm('تمسحي دي؟')){arr.splice(i,1);save();render()}};
+c.appendChild(x);L.appendChild(c)})
+}
+
+function stats(){var all=0,done=0,lt=0;TABS.forEach(function(t){data[t.k].forEach(function(it){all++;if(it.s===2)done++;if(late(it))lt++})});
+$('s0').textContent=all;$('s1').textContent=all-done;$('s2').textContent=done;$('s3').textContent=lt}
+
+function render(){renderTabs();renderAdd();renderList();stats()}
+
+function shareText(){var o='📚 منظّم الدفعة\n';
+TABS.forEach(function(t){var a=data[t.k];if(!a.length)return;o+='\n'+t.n+'\n';
+a.forEach(function(it){o+='• '+it.t+(it.n?' ('+it.n+')':'')+' — '+t.st[it.s]+(it.d?' — '+fmt(it.d):'')+'\n'})});
+return o}
+
+var mode='';
+function open(m){mode=m;var ta=$('ta');$('msg').textContent='';
+if(m==='share'){$('mt').textContent='انسخي الرسالة وابعتيها على واتساب';ta.value=shareText();ta.readOnly=true;$('imp').style.display='none'}
+else{$('mt').textContent='احتفظي بالكود ده، أو الصقي كود قديم واضغطي استيراد';ta.value=JSON.stringify(data);ta.readOnly=false;$('imp').style.display=''}
+$('modal').classList.add('on')}
+$('share').onclick=function(){open('share')};
+$('backup').onclick=function(){open('backup')};
+$('close').onclick=function(){$('modal').classList.remove('on')};
+$('copy').onclick=function(){var ta=$('ta');ta.select();var ok=false;
+try{if(navigator.clipboard){navigator.clipboard.writeText(ta.value);ok=true}else ok=document.execCommand('copy')}catch(e){try{ok=document.execCommand('copy')}catch(e2){}}
+$('msg').textContent=ok?'اتنسخت ✔️':'ظلّلي الكلام وانسخيه بإيدك'};
+$('imp').onclick=function(){try{var d=JSON.parse($('ta').value);var ok=false;
+for(var k in data)if(Array.isArray(d[k])){data[k]=d[k];ok=true}
+if(!ok)throw 0;save();render();$('msg').textContent='اتعمل استيراد ✔️'}catch(e){$('msg').textContent='الكود مش مظبوط'}};
+
+load();render();
+</script>
+</body>
+</html>
